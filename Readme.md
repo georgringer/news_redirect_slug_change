@@ -42,6 +42,6 @@ settings:
 If you are using this extension in one of your projects or for a client, please think about sponsoring this extension.
 
 - Paypal: https://www.paypal.me/GeorgRinger/20
-- *or* conctact me if you need an invoice
+- *or* contact me if you need an invoice
 
 **Thanks!**
