@@ -1,0 +1,38 @@
+{
+    "name": "georgringer/news-redirect-slug-change",
+    "type": "typo3-cms-extension",
+    "description": "Generate redirect if the slug changes",
+    "keywords": [
+        "TYPO3",
+        "extension",
+        "article",
+        "news",
+		"redirect",
+		"seo",
+		"slug"
+    ],
+    "authors": [
+        {
+            "name": "Georg Ringer",
+            "role": "Developer"
+        }
+    ],
+    "license": [
+        "GPL-2.0-or-later"
+    ],
+    "require": {
+        "typo3/cms-core": "^10.4 || ^11",
+        "typo3/cms-redirects": "^10.4 || ^11",
+        "georgringer/news": "^9 || ^10"
+    },
+    "autoload": {
+        "psr-4": {
+            "GeorgRinger\\NewsRedirectSlugChange\\": "Classes"
+        }
+    },
+    "extra": {
+        "typo3/cms": {
+            "extension-key": "news_redirect_slug_change"
+        }
+    }
+}

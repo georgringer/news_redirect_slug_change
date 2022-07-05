@@ -1,0 +1,11 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  GeorgRinger\NewsRedirectSlugChange\:
+    resource: '../Classes/*'
+
+  GeorgRinger\NewsRedirectSlugChange\Hooks\DataHandlerSlugUpdateHook:
+    public: true

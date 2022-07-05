@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns:t3="http://typo3.org/schemas/xliff" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+	<file source-language="en" target-language="de" original="" datatype="plaintext" date="2022-07-05T06:22:24+02:00">
+		<body>
+			<trans-unit id="notification.success" resname="notification.success">
+				<source>A new redirect with ID &#34;%s&#34; has been created.</source>
+				<target>Ein neuer Redirect mit der ID &#34;%s&#34; wurde erstellt</target>
+			</trans-unit>
+		</body>
+	</file>
+</xliff>
