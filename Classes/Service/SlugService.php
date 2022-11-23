@@ -12,6 +12,7 @@ use TYPO3\CMS\Core\Context\DateTimeAspect;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\Model\CorrelationId;
 use TYPO3\CMS\Core\Domain\Repository\PageRepository;
+use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\LinkHandling\LinkService;
 use TYPO3\CMS\Core\Site\Entity\SiteInterface;
 use TYPO3\CMS\Core\Site\SiteFinder;
@@ -61,7 +62,12 @@ class SlugService implements LoggerAwareInterface
             $redirectUid = $this->createRedirect($currentSlug, $recordId, (int)$currentRecord['sys_language_uid'], $pageId);
 
             if ($redirectUid) {
-                $this->redirectCacheService->rebuildForHost($redirectUid['source_host'] ?: '*');
+                $typo3Version = GeneralUtility::makeInstance(Typo3Version::class);
+                if (version_compare((string) $typo3Version->getMajorVersion(), '11', '<')) {
+                    $this->redirectCacheService->rebuild();
+                } else {
+                    $this->redirectCacheService->rebuildForHost($redirectUid['source_host'] ?: '*');
+                }
                 return $redirectUid;
             }
         }
