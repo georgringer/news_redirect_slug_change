@@ -33,6 +33,7 @@ class SlugService implements LoggerAwareInterface
     protected int $httpStatusCode;
     protected int $targetPageId;
     protected RedirectCacheService $redirectCacheService;
+    protected $typo3MajorVersion = 0;
 
     public function __construct(
         Context              $context,
@@ -47,6 +48,7 @@ class SlugService implements LoggerAwareInterface
         $this->pageRepository = $pageRepository;
         $this->linkService = $linkService;
         $this->redirectCacheService = $redirectCacheService;
+        $this->typo3MajorVersion = GeneralUtility::makeInstance(Typo3Version::class)->getMajorVersion();
     }
 
 
@@ -59,25 +61,24 @@ class SlugService implements LoggerAwareInterface
         $pageId = $currentRecord['pid'];
         $this->initializeSettings($pageId);
         if ($this->autoCreateRedirects && $this->targetPageId) {
-            $redirectUid = $this->createRedirect($currentSlug, $recordId, (int)$currentRecord['sys_language_uid'], $pageId);
+            $redirectRow = $this->createRedirect($currentSlug, $recordId, (int)$currentRecord['sys_language_uid'], $pageId);
 
-            if ($redirectUid) {
-                $typo3Version = GeneralUtility::makeInstance(Typo3Version::class);
-                if (version_compare((string) $typo3Version->getMajorVersion(), '11', '<')) {
+            if ($redirectRow) {
+                if ($this->typo3MajorVersion < 11) {
                     $this->redirectCacheService->rebuild();
                 } else {
-                    $this->redirectCacheService->rebuildForHost($redirectUid['source_host'] ?: '*');
+                    $this->redirectCacheService->rebuildForHost($redirectRow['source_host'] ?: '*');
                 }
-                return $redirectUid;
+                return $redirectRow['uid'];
             }
         }
         return 0;
     }
 
     /**
-     * @return int redirect uid
+     * @return array redirect record
      */
-    protected function createRedirect(string $originalSlug, int $recordId, int $languageId, int $pid): int
+    protected function createRedirect(string $originalSlug, int $recordId, int $languageId, int $pid): array
     {
         $siteLanguage = $this->site->getLanguageById($languageId);
 
@@ -113,11 +114,15 @@ class SlugService implements LoggerAwareInterface
             'lasthiton' => 0,
             'disable_hitcount' => 0,
         ];
+        if ($this->typo3MajorVersion >= 12) {
+            unset($record['createdby']);
+            $record['creation_type'] = 6322;
+        }
         //todo use dataHandler to create records
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable('sys_redirect');
         $connection->insert('sys_redirect', $record);
-        return (int)$connection->lastInsertId('sys_redirect');
+        return (array)BackendUtility::getRecord('sys_redirect', (int)$connection->lastInsertId('sys_redirect'));
     }
 
 
