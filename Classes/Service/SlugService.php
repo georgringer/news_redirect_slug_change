@@ -91,7 +91,7 @@ class SlugService implements LoggerAwareInterface
             'parameters' => '_language=' . $languageId . '&tx_news_pi1[controller]=News&tx_news_pi1[action]=detail&tx_news_pi1[news]=' . $recordId,
         ]);
 
-        $sourcePath = $this->generateUrl($this->site, $recordId, $this->targetPageId);
+        $sourcePath = $this->generateUrl($this->site, $recordId, $this->targetPageId, $languageId);
         $sourcePath = '/' . ltrim(str_replace(['http://', 'https://', $siteLanguage->getBase()->getHost()], '', $sourcePath), '/');
 
         $record = [
@@ -126,14 +126,15 @@ class SlugService implements LoggerAwareInterface
     }
 
 
-    protected function generateUrl(SiteInterface $site, int $recordId, int $detailPageId): string
+    protected function generateUrl(SiteInterface $site, int $recordId, int $detailPageId, int $languageId): string
     {
         $additionalQueryParams = [
             'tx_news_pi1' => [
                 'action' => 'detail',
                 'controller' => 'News',
                 'news' => $recordId
-            ]
+            ],
+            '_language' => $languageId
         ];
         return (string)$site->getRouter()->generateUri(
             (string)$detailPageId,
