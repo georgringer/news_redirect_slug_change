@@ -21,8 +21,8 @@
         "GPL-2.0-or-later"
     ],
     "require": {
-        "typo3/cms-core": "^10.4 || ^11 || ^12",
-        "typo3/cms-redirects": "^10.4 || ^11 || ^12",
+        "typo3/cms-core": "^10.4 || ^11 || ^12.3",
+        "typo3/cms-redirects": "^10.4 || ^11 || ^12.3",
         "georgringer/news": "^9 || ^10 || ^11"
     },
     "autoload": {

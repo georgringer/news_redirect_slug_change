@@ -5,7 +5,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 if (GeneralUtility::makeInstance(Typo3Version::class)->getMajorVersion() >= 12) {
     $GLOBALS['TCA']['sys_redirect']['columns']['creation_type']['config']['items'][] = [
-        'news',
-        6322,
+        'label' => 'news',
+        'value' => 6322,
     ];
 }
