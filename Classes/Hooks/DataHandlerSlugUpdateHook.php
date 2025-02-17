@@ -73,14 +73,14 @@ class DataHandlerSlugUpdateHook
 
         $redirectId = $this->slugService->rebuildSlugsForSlugChange($id, $persistedSlugValue, $fieldArray['path_segment'], $dataHandler->getCorrelationId());
         if ($redirectId) {
-            $this->addMessage($redirectId);
+            $this->addCustomMessage($redirectId);
         }
     }
 
-    protected function addMessage(int $recordId): void
+    protected function addCustomMessage(int $recordId): void
     {
         $message = sprintf($GLOBALS['LANG']->sL('LLL:EXT:news_redirect_slug_change/Resources/Private/Language/de.locallang.xlf:notification.success'), $recordId);
-        $flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $message, '', FlashMessage::INFO, true);
+        $flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $message, '', \TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::INFO, true);
         $flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
         $defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
         $defaultFlashMessageQueue->enqueue($flashMessage);

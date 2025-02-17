@@ -1,7 +1,7 @@
 {
     "name": "georgringer/news-redirect-slug-change",
     "type": "typo3-cms-extension",
-	"version": "1.2.0",
+	"version": "1.3.0",
     "description": "Generate redirect if the slug changes",
     "keywords": [
         "TYPO3",
@@ -22,8 +22,8 @@
         "GPL-2.0-or-later"
     ],
     "require": {
-        "typo3/cms-core": "^10 || ^11 || ^12",
-        "typo3/cms-redirects": "^10 || ^11 || ^12",
+        "typo3/cms-core": "^12 || ^13",
+        "typo3/cms-redirects": "^12 || ^13",
         "georgringer/news": "^9 || ^10 || ^11 || ^12"
     },
     "autoload": {
