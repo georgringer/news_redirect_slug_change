@@ -7,9 +7,11 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\Utility\BackendUtility as BackendUtilityCore;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\DateTimeAspect;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\DataHandling\History\RecordHistoryStore;
 use TYPO3\CMS\Core\DataHandling\Model\CorrelationId;
 use TYPO3\CMS\Core\Domain\Repository\PageRepository;
 use TYPO3\CMS\Core\Information\Typo3Version;
@@ -21,6 +23,18 @@ use TYPO3\CMS\Redirects\Service\RedirectCacheService;
 
 class SlugService implements LoggerAwareInterface
 {
+
+    /**
+     * @var CorrelationId|string
+     */
+    protected $correlationIdRedirectCreation = '';
+
+    /**
+     * @var CorrelationId|string
+     */
+    protected $correlationIdSlugUpdate = '';
+
+
     use LoggerAwareTrait;
 
     protected Context $context;
@@ -61,14 +75,16 @@ class SlugService implements LoggerAwareInterface
         $pageId = $currentRecord['pid'];
         $this->initializeSettings($pageId);
         if ($this->autoCreateRedirects && $this->targetPageId) {
+            $this->createCorrelationIds($recordId, $correlationId);
             $redirectRow = $this->createRedirect($currentSlug, $recordId, (int)$currentRecord['sys_language_uid'], $pageId);
-
             if ($redirectRow) {
                 if ($this->typo3MajorVersion < 11) {
                     $this->redirectCacheService->rebuild();
                 } else {
                     $this->redirectCacheService->rebuildForHost($redirectRow['source_host'] ?: '*');
                 }
+                $this->sendNotification();
+
                 return $redirectRow['uid'];
             }
         }
@@ -122,7 +138,28 @@ class SlugService implements LoggerAwareInterface
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable('sys_redirect');
         $connection->insert('sys_redirect', $record);
-        return (array)BackendUtility::getRecord('sys_redirect', (int)$connection->lastInsertId('sys_redirect'));
+        $id = (int)$connection->lastInsertId('sys_redirect');
+        $record['uid'] = $id;
+        $this->getRecordHistoryStore()->addRecord('sys_redirect', $id, $record, $this->correlationIdRedirectCreation);
+
+        return (array)BackendUtility::getRecord('sys_redirect', $id);
+    }
+
+    protected function getRecordHistoryStore(): RecordHistoryStore
+    {
+        $backendUser = $this->getBackendUser();
+        return GeneralUtility::makeInstance(
+            RecordHistoryStore::class,
+            RecordHistoryStore::USER_BACKEND,
+            (int)$backendUser->user['uid'],
+            (int)$backendUser->getOriginalUserIdWhenInSwitchUserMode(),
+            $this->context->getPropertyFromAspect('date', 'timestamp'),
+            $backendUser->workspace
+        );
+    }
+    protected function getBackendUser(): BackendUserAuthentication
+    {
+        return $GLOBALS['BE_USER'];
     }
 
 
@@ -159,6 +196,32 @@ class SlugService implements LoggerAwareInterface
         if ($overruledPageId) {
             $this->targetPageId = $overruledPageId;
         }
+    }
+    protected function createCorrelationIds(int $newsId, CorrelationId $correlationId): void
+    {
+        if ($correlationId->getSubject() === null) {
+            $subject = md5('news:' . $newsId);
+            $correlationId = $correlationId->withSubject($subject);
+        }
+
+        $this->correlationIdRedirectCreation = $correlationId->withAspects(\TYPO3\CMS\Redirects\Service\SlugService::CORRELATION_ID_IDENTIFIER, 'redirect');
+        $this->correlationIdSlugUpdate = $correlationId->withAspects(\TYPO3\CMS\Redirects\Service\SlugService::CORRELATION_ID_IDENTIFIER, 'path_segment');
+    }
+
+
+
+    protected function sendNotification(): void
+    {
+        $data = [
+            'componentName' => 'redirects',
+            'eventName' => 'slugChanged',
+            'correlations' => [
+                'correlationIdRedirectCreation' => (string)$this->correlationIdRedirectCreation,
+            ],
+            'autoUpdateSlugs' => (bool)false,
+            'autoCreateRedirects' => (bool)true,
+        ];
+        BackendUtility::setUpdateSignal('redirects:slugChanged', $data);
     }
 
 }
