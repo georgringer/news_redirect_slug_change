@@ -14,7 +14,6 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\History\RecordHistoryStore;
 use TYPO3\CMS\Core\DataHandling\Model\CorrelationId;
 use TYPO3\CMS\Core\Domain\Repository\PageRepository;
-use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\LinkHandling\LinkService;
 use TYPO3\CMS\Core\Site\Entity\SiteInterface;
 use TYPO3\CMS\Core\Site\SiteFinder;
@@ -47,7 +46,6 @@ class SlugService implements LoggerAwareInterface
     protected int $httpStatusCode;
     protected int $targetPageId;
     protected RedirectCacheService $redirectCacheService;
-    protected $typo3MajorVersion = 0;
 
     public function __construct(
         Context              $context,
@@ -62,7 +60,6 @@ class SlugService implements LoggerAwareInterface
         $this->pageRepository = $pageRepository;
         $this->linkService = $linkService;
         $this->redirectCacheService = $redirectCacheService;
-        $this->typo3MajorVersion = GeneralUtility::makeInstance(Typo3Version::class)->getMajorVersion();
     }
 
 
@@ -78,11 +75,7 @@ class SlugService implements LoggerAwareInterface
             $this->createCorrelationIds($recordId, $correlationId);
             $redirectRow = $this->createRedirect($currentSlug, $recordId, (int)$currentRecord['sys_language_uid'], $pageId);
             if ($redirectRow) {
-                if ($this->typo3MajorVersion < 11) {
-                    $this->redirectCacheService->rebuild();
-                } else {
-                    $this->redirectCacheService->rebuildForHost($redirectRow['source_host'] ?: '*');
-                }
+                $this->redirectCacheService->rebuildForHost($redirectRow['source_host'] ?: '*');
                 $this->sendNotification();
 
                 return $redirectRow['uid'];
@@ -111,10 +104,9 @@ class SlugService implements LoggerAwareInterface
         $sourcePath = '/' . ltrim(str_replace(['http://', 'https://', $siteLanguage->getBase()->getHost()], '', $sourcePath), '/');
 
         $record = [
-            'pid' => $pid,
+            'pid' => $this->site->getRootPageId(),
             'updatedon' => $date->get('timestamp'),
             'createdon' => $date->get('timestamp'),
-            'createdby' => $this->context->getPropertyFromAspect('backend.user', 'id'),
             'deleted' => 0,
             'disabled' => 0,
             'starttime' => 0,
@@ -129,11 +121,9 @@ class SlugService implements LoggerAwareInterface
             'hitcount' => 0,
             'lasthiton' => 0,
             'disable_hitcount' => 0,
+            'creation_type' => 6322,
         ];
-        if ($this->typo3MajorVersion >= 12) {
-            unset($record['createdby']);
-            $record['creation_type'] = 6322;
-        }
+
         //todo use dataHandler to create records
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable('sys_redirect');
@@ -182,7 +172,7 @@ class SlugService implements LoggerAwareInterface
     protected function initializeSettings(int $pageId): void
     {
         $this->site = $this->siteFinder->getSiteByPageId($pageId);
-        $settings = $this->site->getConfiguration()['settings']['redirectsNews'] ?? [];
+        $settings = $this->site->getConfiguration()['redirectsNews'] ?? [];
         $this->autoCreateRedirects = (bool)($settings['autoCreateRedirects'] ?? true);
         if (!$this->context->getPropertyFromAspect('workspace', 'isLive')) {
             $this->autoCreateRedirects = false;

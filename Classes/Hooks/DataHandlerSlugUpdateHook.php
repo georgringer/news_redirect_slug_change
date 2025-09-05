@@ -8,6 +8,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
+use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 
@@ -80,7 +81,7 @@ class DataHandlerSlugUpdateHook
     protected function addMessage(int $recordId): void
     {
         $message = sprintf($GLOBALS['LANG']->sL('LLL:EXT:news_redirect_slug_change/Resources/Private/Language/de.locallang.xlf:notification.success'), $recordId);
-        $flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $message, '', FlashMessage::INFO, true);
+        $flashMessage = GeneralUtility::makeInstance(FlashMessage::class, $message, '', ContextualFeedbackSeverity::INFO, true);
         $flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
         $defaultFlashMessageQueue = $flashMessageService->getMessageQueueByIdentifier();
         $defaultFlashMessageQueue->enqueue($flashMessage);
